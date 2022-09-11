@@ -163,7 +163,7 @@ const compile = tree => {
     output += 'return html;';
     return output;
 };
-var meatwagon$1 = meatwagon = {
+var meatwagon = {
     render(input, state) {
         return makeRenderer(compile(parse(input)))(state);
     },
@@ -172,4 +172,4 @@ var meatwagon$1 = meatwagon = {
     }
 };
 
-export { meatwagon$1 as default };
+export { meatwagon as default };

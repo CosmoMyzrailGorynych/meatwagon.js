@@ -163,7 +163,7 @@ const compile = tree => {
     output += 'return html;'
     return output;
 };
-export default meatwagon = {
+export default {
     render(input, state) {
         return makeRenderer(compile(parse(input)))(state);
     },
