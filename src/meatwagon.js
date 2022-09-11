@@ -4,7 +4,7 @@ const idsPattern = /(#[\w-]+)/g;
 const indentation = /^\s*/;
 const controlOpPattern = /^(if|while|for)\s*\([\s\S]+\)\{?$/;
 const countIndentation = str => indentation.exec(str)[0].length;
-const atomic = ['br', 'img', 'hr'];
+const atomic = ['br', 'img', 'hr', 'area', 'base', 'col', 'command', 'embed', 'input', 'link', 'meta', 'keygen', 'param', 'source', 'track', 'wbr'];
 
 const parse = input => {
     const lines = input.split('\n');
