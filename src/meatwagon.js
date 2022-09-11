@@ -1,4 +1,4 @@
-const tagPattern = /^(?<tagName>[\w-]+)?(?<ids>(?:[\.#][\w-]+)*)(?:\((?<attrs>[^\n]*)\))?$/;
+const tagPattern = /^(?<tagName>[\w-]+)?(?<ids>(?:[\.#][\w-]+)*)(?:\((?<attrs>[^\n]*?)\))?(?:\s(?<text>[\s\S]+)?)?$/;
 const classesPattern = /(\.[\w-]+)/g;
 const idsPattern = /(#[\w-]+)/g;
 const indentation = /^\s*/;
@@ -49,6 +49,9 @@ const parse = input => {
             if (['text', 'comment'].includes(prevEntry?.type)) {
                 throw new Error(`Line ${i + 1}: entry of type ${prevEntry?.type} cannot have children.\n${line}`);
             }
+            if (prevEntry?.type === 'tagClose') {
+                throw new Error(`Line ${i + 1}: tag ${prevEntry.tagName} is already closed.\n${line}`);
+            }
             if (prevEntry?.type === 'tag' && atomic.includes(prevEntry.tagName)) {
                 throw new Error(`Line ${i + 1}: tag ${prevEntry.tagName} cannot have children.\n${line}`);
             }
@@ -94,14 +97,30 @@ const parse = input => {
             if (!parsed) {
                 throw new Error(`Line ${i + 1}: malformed tag.\n${trimmed}`);
             }
-            const {tagName, ids, attrs} = parsed.groups;
+            const {tagName, ids, attrs, text} = parsed.groups;
             prevEntry = {
                 type: 'tag',
                 tagName: tagName || 'div',
                 ids,
                 attrs,
+                hasText: Boolean(text)
             };
             currentNode.push(prevEntry);
+            if (text && atomic.includes(tagName)) {
+                throw new Error(`Line ${i + 1}: tag ${tagName} cannot have a text node.\n${trimmed}`)
+            }
+            if (text) {
+                currentNode.push({
+                    type: 'text',
+                    value: text.trim()
+                });
+                const closing = {
+                    type: 'tagClose',
+                    tagName: prevEntry.tagName
+                };
+                prevEntry = closing;
+                currentNode.push(prevEntry);
+            }
         }
     }
     while (tagStack.length) {
