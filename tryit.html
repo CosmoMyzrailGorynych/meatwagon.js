@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Try meatwagon.js</title>
+    <style>
+        body, html {
+            margin: 0;
+            height: 100%;
+            position: relative;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 100%;
+            align-items: stretch;
+            justify-content: stretch;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <textarea id="input">
+header
+    - if (state.loggedIn)
+        h2 Welcome, ${state.user}!
+        a(href="/logout") Logout
+    - else
+        a(href="/login") Login
+main
+    h2 News
+    - for (const news of state.news)
+        article
+            h3 ${news.title}
+            p ${news.body}
+footer
+    | © Necropolist ${(new Date()).getFullYear()}}
+        </textarea>
+        <textarea id="output"></textarea>
+    </div>
+    <script type="text/javascript" src="/dist/meatwagon.browser.js"></script>
+    <script type="text/javascript">
+        const state = {
+            user: 'Arthas',
+            loggedIn: true,
+            news: [{
+                title: 'New Yandex.Camera can fit 15 arrested men',
+                body: 'And other jokes.'
+            }, {
+                title: 'Bears learned to fly',
+                body: 'We\'re in danger.'
+            }]
+        };
+        const render = () => output.value = meatwagon.render(input.value, state);
+        const input = document.getElementById('input'),
+              output = document.getElementById('output');
+        input.addEventListener('input', e => {
+            render();
+        });
+        render();
+    </script>
+</body>
+</html>

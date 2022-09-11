@@ -1,1 +1,219 @@
-var meatwagon=function(){"use strict";const e=/^(?<tagName>[\w-]+)?(?<ids>(?:[\.#][\w-]+)*)(?:\((?<attrs>[^\n]*)\))?$/,t=/(\.[\w-]+)/g,a=/(#[\w-]+)/g,n=/^\s*/,s=/^(if|while|for)\s*\([\s\S]+\)\{?$/,r=["br","img","hr"],i=t=>{const a=t.split("\n"),i=[],c=[0],o=[];let l,u=i;const p=()=>{const e=o.pop();"tag"!==e.type||r.includes(e.tagName)?"code"===e.type&&s.test(e.value)&&u.push({type:"code",value:"}"}):u.push({type:"tagClose",tagName:e.tagName}),c.pop()};for(let t=0;t<a.length;t++){const i=a[t],h=i.trim();if(""===h)continue;const m=c[c.length-1],d=(g=i,n.exec(g)[0].length);if(d<m){if(-1===c.indexOf(d))throw new Error(`Bad indentation at line ${t+1}, expected depth: ${c.join(", ")} spaces, got ${d}.\n${i}`);for(;c[c.length-1]!==d;)p(),u=u.parent}else if(d>m){if(["text","comment"].includes(l?.type))throw new Error(`Line ${t+1}: entry of type ${l?.type} cannot have children.\n${i}`);if("tag"===l?.type&&r.includes(l.tagName))throw new Error(`Line ${t+1}: tag ${l.tagName} cannot have children.\n${i}`);const e=[];e.parent=u,u.push(e),c.push(d),o.push(l),u=e}else"tag"!==l?.type||r.includes(l.tagName)||u.push({type:"tagClose",tagName:l.tagName});if("|"===h[0])l={type:"text",value:h.slice(1).trimStart()},u.push(l);else if(h.startsWith("//"))"-"===h[2]&&(l={type:"comment",value:h.slice(3)},u.push(l));else if("-"===h[0])l={type:"code",value:h.slice(1).trim()},s.test(l.value)&&(l.value+="{"),u.push(l);else{const a=e.exec(h);if(!a)throw new Error(`Line ${t+1}: malformed tag.\n${h}`);const{tagName:n,ids:s,attrs:r}=a.groups;l={type:"tag",tagName:n||"div",ids:s,attrs:r},u.push(l)}}for(var g;o.length;)p();return i},c=/'/g,o=e=>e.replace(c,"\\`");let l;const u=e=>{if(e instanceof Array)return e.map(u).join("");const n=l?"":"html += `";switch(l="code"!==e.type,e.type){case"comment":return`${n}\x3c!--${o(e.value)}--\x3e;`;case"code":return n?e.value:`\`;${e.value}`;case"text":return`${n}${o(e.value)}`;case"tag":let s=e.attrs?" "+e.attrs:"";if(e.ids){const n=a.exec(e.ids)?.[0],r=e.ids.match(t);if(n&&(s+=` id="${n.slice(1)}" `),r?.length){s+=' class="';for(const e of r)s+=e.slice(1)+" ";s=s.slice(0,-1)+'" '}s=s.slice(0,-1)}return`${n}<${e.tagName}${o(s)}>`;case"tagClose":return`${n}</${e.tagName}>`}},p=e=>new Function("state",e),g=e=>{let t="let html = '';";return t+=u(e),l&&(t+="`;"),t+="return html;",t};return{render:(e,t)=>p(g(i(e)))(t),renderer:e=>p(g(i(e)))}}();
+var meatwagon = (function () {
+    'use strict';
+
+    const tagPattern = /^(?<tagName>[\w-]+)?(?<ids>(?:[\.#][\w-]+)*)(?:\((?<attrs>[^\n]*?)\))?(?:\s(?<text>[\s\S]+)?)?$/;
+    const classesPattern = /(\.[\w-]+)/g;
+    const idsPattern = /(#[\w-]+)/g;
+    const indentation = /^\s*/;
+    const controlOpPattern = /^((if|while|for)\s*\([\s\S]+\)|else)$/;
+    const countIndentation = str => indentation.exec(str)[0].length;
+    const atomic = ['br', 'img', 'hr', 'area', 'base', 'col', 'command', 'embed', 'input', 'link', 'meta', 'keygen', 'param', 'source', 'track', 'wbr'];
+
+    const parse = input => {
+        const lines = input.split(/\r?\n/g);
+        const tree = {
+            type: 'root',
+            children: []
+        };
+        const depthStack = [-1];
+        const tagStack = [];
+        let currContainer = tree;
+        let prevNode = tree;
+        const goUp = () => {
+            tagStack.pop();
+            depthStack.pop();
+            currContainer = tagStack[tagStack.length - 1];
+        };
+        const goDown = (node, depth) => {
+            depthStack.push(depth);
+            tagStack.push(node);
+            currContainer = node;
+        };
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+            if (trimmed === '') {
+                continue;
+            }
+            const lastDepth = depthStack[depthStack.length - 1];
+            const newDepth = countIndentation(line);
+            let newNode;
+            if (trimmed[0] === '|') {
+                newNode = {
+                    type: 'text',
+                    value: trimmed.slice(1).trimStart()
+                };
+            } else if (trimmed.startsWith('//')) {
+                if (trimmed[2] === '-') {
+                    newNode = {
+                        type: 'comment',
+                        value: trimmed.slice(3)
+                    };
+                }
+            } else if (trimmed[0] === '-') {
+                newNode = {
+                    type: 'code',
+                    value: trimmed.slice(1).trim(),
+                    children: []
+                };
+            } else {
+                const parsed = tagPattern.exec(trimmed);
+                if (!parsed) {
+                    throw new Error(`Line ${i + 1}: malformed tag.\n${trimmed}`);
+                }
+                const {tagName, ids, attrs, text} = parsed.groups;
+                newNode = {
+                    type: 'tag',
+                    tagName: tagName || 'div',
+                    ids,
+                    attrs,
+                    hasText: Boolean(text),
+                    children: [],
+                    atomic: atomic.includes(tagName)
+                };
+                if (text) {
+                    if (newNode.atomic) {
+                        throw new Error(`Line ${i + 1}: tag ${tagName} cannot have a text node.\n${trimmed}`)
+                    }
+                    newNode.children.push({
+                        type: 'text',
+                        value: text.trim()
+                    });
+                }
+            }
+            if (newDepth < lastDepth) {
+                const depthInd = depthStack.indexOf(newDepth);
+                if (depthInd === -1) {
+                    throw new Error(`Bad indentation at line ${i + 1}, expected depth: ${depthStack.join(', ')} spaces, got ${newDepth}.\n${line}`);
+                }
+                while (depthStack[depthStack.length - 1] !== newDepth) {
+                    goUp();
+                }
+                currContainer.children.push(newNode);
+            } else if (newDepth > lastDepth) {
+                if (!('children' in currContainer)) {
+                    throw new Error(`Line ${i + 1}: entry of type ${currContainer.type} cannot have children.\n${line}`);
+                }
+                if (currContainer.type === 'tag') {
+                    if (atomic.includes(currContainer.tagName)) {
+                        throw new Error(`Line ${i + 1}: tag ${currContainer.tagName} cannot have children.\n${line}`);
+                    }
+                    if (currContainer.hasText) {
+                        throw new Error(`Line ${i + 1}: tag ${currContainer.tagName} has a text node and cannot have children.\n${line}`);
+                    }
+                }
+                goDown(prevNode, newDepth);
+                currContainer.children.push(newNode);
+            } else {
+                currContainer.children.push(newNode);
+            }
+            prevNode = newNode;
+        }
+        return tree;
+    };
+
+    const escapist = /'/g;
+    const escapeQuotes = str => str.replace(escapist, '\\`');
+
+    const getClassesIds = ids => {
+        const id = idsPattern.exec(ids)?.[0],
+              classes = ids.match(classesPattern);
+        let str = '';
+        if (id) {
+            str += ` id="${id.slice(1)}" `;
+        }
+        if (classes?.length) {
+            str += ' class="';
+            for (const c of classes) {
+                str += c.slice(1) + ' ';
+            }
+            str = str.slice(0, -1) + '" ';
+        }
+        return str.slice(0, -1);
+    };
+
+    let isPrevNodeHtml;
+    const looseEnd = isHtml => {
+        let output = '';
+        if (isPrevNodeHtml && !isHtml) {
+            output = '`;';
+        } else if (!isPrevNodeHtml && isHtml) {
+            output = 'html+=`';
+        }
+        isPrevNodeHtml = isHtml;
+        return output;
+    };
+
+    const walk = node => {
+        if (node instanceof Array) {
+            return node.map(walk).join('');
+        }
+        let out;
+        switch (node.type) {
+            case 'comment':
+                return `${looseEnd(true)}<!--${escapeQuotes(node.value)}-->`;
+            case 'code':
+                out = looseEnd(false) + node.value;
+                const b = controlOpPattern.test(node.value);
+                if (b) {
+                    out += '{';
+                }
+                if (node.children?.length) {
+                    out += walk(node.children);
+                }
+                if (b) {
+                    out += `${looseEnd(false)}}`;
+                }
+                isPrevNodeHtml = false;
+                return out;
+            case 'text':
+                return `${looseEnd(true)}${escapeQuotes(node.value)}`;
+            case 'tag':
+                const a = node.atomic;
+                let attrsString = node.attrs? (' ' + node.attrs) : '';
+                if (node.ids) {
+                    attrsString += getClassesIds(node.ids);
+                }
+                out = `${looseEnd(true)}<${node.tagName}${escapeQuotes(attrsString)}${a ? '/' : ''}>`;
+                if (node.children?.length) {
+                    out += walk(node.children);
+                }
+                if (!a) {
+                    out += `${looseEnd(true)}</${node.tagName}>`;
+                }
+                isPrevNodeHtml = true;
+                return out;
+        }
+    };
+    const makeRenderer = code => {
+        try {
+            return new Function('state', code);
+        } catch (e) {
+            console.error(code);
+            throw new Error(`Malformed JS code: ${e.message}`);
+        }
+    };
+    const compile = tree => {
+        let output = 'let html = \'\';';
+        isPrevNodeHtml = false;
+        output += walk(tree.children);
+        if (isPrevNodeHtml) {
+            output += '`;';
+        }
+        output += 'return html;';
+        return output;
+    };
+    var meatwagon = {
+        render(input, state = {}) {
+            const tree = parse(input);
+            const compiled = compile(tree);
+            return makeRenderer(compiled)(state);
+        },
+        renderer(input) {
+            return makeRenderer(compile(parse(input)));
+        }
+    };
+
+    return meatwagon;
+
+})();
