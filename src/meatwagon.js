@@ -7,7 +7,7 @@ const countIndentation = str => indentation.exec(str)[0].length;
 const atomic = ['br', 'img', 'hr', 'area', 'base', 'col', 'command', 'embed', 'input', 'link', 'meta', 'keygen', 'param', 'source', 'track', 'wbr'];
 
 const parse = input => {
-    const lines = input.split('\n');
+    const lines = input.split(/\r?\n/g);
     const tree = [];
     const depthStack = [0];
     const tagStack = [];
