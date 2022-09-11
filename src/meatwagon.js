@@ -15,7 +15,7 @@ const parse = input => {
     let prevEntry;
     const goUp = () => {
         const parent = tagStack.pop();
-        if (parent.type === 'tag') {
+        if (parent.type === 'tag' && !atomic.includes(parent.tagName)) {
             currentNode.push({
                 type: 'tagClose',
                 tagName: parent.tagName
@@ -59,7 +59,7 @@ const parse = input => {
             tagStack.push(prevEntry);
             currentNode = newNode;
         } else {
-            if (prevEntry?.type === 'tag') {
+            if (prevEntry?.type === 'tag' && !atomic.includes(prevEntry.tagName)) {
                 currentNode.push({
                     type: 'tagClose',
                     tagName: prevEntry.tagName
