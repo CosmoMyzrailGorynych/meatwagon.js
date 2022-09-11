@@ -23,16 +23,17 @@
 <body>
     <div class="container">
         <textarea id="input">
-header
+header.blue
     - if (state.loggedIn)
         h2 Welcome, ${state.user}!
         a(href="/logout") Logout
     - else
         a(href="/login") Login
 main
-    h2 News
-    - for (const news of state.news)
-        article
+    h2#news News
+    - for (let i = 0; i < state.news.length; i++)
+        - let news = state.news[i];
+        article(id="a${i}")
             h3 ${news.title}
             p ${news.body}
 footer
