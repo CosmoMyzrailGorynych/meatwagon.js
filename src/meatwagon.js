@@ -15,7 +15,6 @@ const parse = input => {
     let prevEntry;
     const goUp = () => {
         const parent = tagStack.pop();
-        console.log(parent);
         if (parent.type === 'tag') {
             currentNode.push({
                 type: 'tagClose',
