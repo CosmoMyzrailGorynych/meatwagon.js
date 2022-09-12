@@ -19,7 +19,7 @@ var meatwagon = (function () {
               tagStack = [];
         let currContainer = tree,
             prevNode = tree;
-        let dotTag, dotDepth;
+        let dotTag, dotDepth, dotTextDepth = null;
         const goUp = () => {
             tagStack.pop();
             depthStack.pop();
@@ -40,13 +40,17 @@ var meatwagon = (function () {
             const newDepth = countIndentation(line);
             if (dotTag) {
                 if (dotDepth < newDepth) {
+                    if (dotTextDepth === null) {
+                        dotTextDepth = newDepth;
+                    }
                     dotTag.children.push({
                         type: 'text',
-                        value: line.slice(dotDepth) + '\n'
+                        value: line.slice(dotTextDepth) + '\n'
                     });
                     continue;
                 } else {
                     dotTag = false;
+                    dotTextDepth = null;
                 }
             }
             let newNode;
