@@ -36,12 +36,13 @@ main
         article(id="a${i}")
             h3 ${news.title}
             p ${news.body}
-footer
-    | © Necropolist ${(new Date()).getFullYear()}}
+footer.
+    © Necropolist ${(new Date()).getFullYear()}.
+    All rights reserved.
         </textarea>
         <textarea id="output"></textarea>
     </div>
-    <script type="text/javascript" src="/dist/meatwagon.browser.js"></script>
+    <script type="text/javascript" src="/dist/meatwagon.browser.min.js"></script>
     <script type="text/javascript">
         const state = {
             user: 'Arthas',

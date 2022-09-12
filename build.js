@@ -8,7 +8,8 @@ const outputOptionsList = [{
     file: 'dist/meatwagon.browser.min.js',
     format: 'iife',
     name: 'meatwagon',
-    plugins: [terser()]
+    plugins: [terser()],
+    sourcemap: true
 }, {
     file: 'dist/meatwagon.browser.js',
     format: 'iife',

@@ -57,6 +57,7 @@ meatwagon.render(input, {
   * If no tag name is specified, `div` is used. For example, `.aNotice You have mail!` renders into `<div class="aNotice">You have mail!</div>`.
   * ⚠ Classes and ID must go before the attributes, if there are any.
 * **Text nodes.** Any line starting with `|` is output as text.
+* **Plain text.** Put a dot at the end of a tag and write plain text inside it.
 * **JS string templating.** Put `${state.yourProperty}` to output values inside text nodes or tags.
 * **JS code.** Any line with `-` as its first symbol is treated as is, as a JavaScript code.
   * `if (condition)`, `while (condition)`, `for (whatever)`, and `else` automatically wrap nested markup with `{` `}`.

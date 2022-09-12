@@ -1,4 +1,4 @@
-const tagPattern = /^(?<tagName>[\w-]+)?(?<ids>(?:[\.#][\w-]+)*)(?:\((?<attrs>[^\n]*?)\))?(?:\s(?<text>[\s\S]+)?)?$/;
+const tagPattern = /^(?<tagName>[\w-]+)?(?<ids>(?:[\.#][\w-]+)*)(?:\((?<attrs>[^\n]*?)\))?(?:\s(?<text>[\s\S]+)?|(?<dot>\.))?$/;
 const classesPattern = /(\.[\w-]+)/g;
 const idsPattern = /(#[\w-]+)/g;
 const indentation = /^\s*/;
@@ -12,10 +12,11 @@ const parse = input => {
         type: 'root',
         children: []
     };
-    const depthStack = [-1];
-    const tagStack = [];
-    let currContainer = tree;
-    let prevNode = tree;
+    const depthStack = [-1],
+          tagStack = [];
+    let currContainer = tree,
+        prevNode = tree;
+    let dotTag, dotDepth;
     const goUp = () => {
         tagStack.pop();
         depthStack.pop();
@@ -34,11 +35,22 @@ const parse = input => {
         }
         const lastDepth = depthStack[depthStack.length - 1];
         const newDepth = countIndentation(line);
+        if (dotTag) {
+            if (dotDepth < newDepth) {
+                dotTag.children.push({
+                    type: 'text',
+                    value: line.slice(dotDepth) + '\n'
+                });
+                continue;
+            } else {
+                dotTag = false;
+            }
+        }
         let newNode;
         if (trimmed[0] === '|') {
             newNode = {
                 type: 'text',
-                value: trimmed.slice(1).trimStart()
+                value: trimmed.slice(1).trimStart() || ' '
             };
         } else if (trimmed.startsWith('//')) {
             if (trimmed[2] === '-') {
@@ -58,7 +70,7 @@ const parse = input => {
             if (!parsed) {
                 throw new Error(`Line ${i + 1}: malformed tag.\n${trimmed}`);
             }
-            const {tagName, ids, attrs, text} = parsed.groups;
+            const {tagName, ids, attrs, text, dot} = parsed.groups;
             newNode = {
                 type: 'tag',
                 tagName: tagName || 'div',
@@ -68,7 +80,14 @@ const parse = input => {
                 children: [],
                 atomic: atomic.includes(tagName)
             };
-            if (text) {
+            if (dot) {
+                dotTag = newNode;
+                dotDepth = newDepth;
+                newNode.children.push({
+                    type: 'text',
+                    value: '\n'
+                });
+            } else if (text) {
                 if (newNode.atomic) {
                     throw new Error(`Line ${i + 1}: tag ${tagName} cannot have a text node.\n${trimmed}`)
                 }
