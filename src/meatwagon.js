@@ -128,7 +128,7 @@ const parse = input => {
     return tree;
 };
 
-const escapist = /'/g;
+const escapist = /`/g;
 const escapeQuotes = str => str.replace(escapist, '\\`');
 
 const getClassesIds = ids => {

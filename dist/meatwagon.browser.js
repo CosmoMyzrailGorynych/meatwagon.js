@@ -131,7 +131,7 @@ var meatwagon = (function () {
         return tree;
     };
 
-    const escapist = /'/g;
+    const escapist = /`/g;
     const escapeQuotes = str => str.replace(escapist, '\\`');
 
     const getClassesIds = ids => {
@@ -163,7 +163,7 @@ var meatwagon = (function () {
         return output;
     };
 
-    const walk = node => {
+    const walk = (node, format = false) => {
         if (node instanceof Array) {
             return node.map(walk).join('');
         }
@@ -212,10 +212,10 @@ var meatwagon = (function () {
             throw new Error(`Malformed JS code: ${e.message}`);
         }
     };
-    const compile = tree => {
+    const compile = (tree, format = false) => {
         let output = 'let html = \'\';';
         isPrevNodeHtml = false;
-        output += walk(tree.children);
+        output += walk(tree.children, format);
         if (isPrevNodeHtml) {
             output += '`;';
         }
@@ -223,13 +223,13 @@ var meatwagon = (function () {
         return output;
     };
     var meatwagon = {
-        render(input, state = {}) {
+        render(input, state = {}, format = false) {
             const tree = parse(input);
-            const compiled = compile(tree);
+            const compiled = compile(tree, false);
             return makeRenderer(compiled)(state);
         },
-        renderer(input) {
-            return makeRenderer(compile(parse(input)));
+        renderer(input, format = false) {
+            return makeRenderer(compile(parse(input), false));
         }
     };
 
