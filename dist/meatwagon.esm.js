@@ -31,6 +31,12 @@ const parse = input => {
         const line = lines[i];
         const trimmed = line.trim();
         if (trimmed === '') {
+            if (dotTag) {
+                dotTag.children.push({
+                    type: 'text',
+                    value: '\n'
+                });
+            }
             continue;
         }
         const lastDepth = depthStack[depthStack.length - 1];
